@@ -189,6 +189,7 @@ def post_message():
     return ('', 204)
 
 
+@app.route('/message')
 def get_message():
     user_id = flask.session.get('user_id')
     if not user_id:
