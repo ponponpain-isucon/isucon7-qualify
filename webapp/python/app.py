@@ -199,7 +199,7 @@ def get_message():
     last_message_id = int(flask.request.args.get('last_message_id'))
     cur = dbh().cursor()
     cur.execute(f"""
-    select m.m_id as m_user_id, name, display_name, avatar_icon, m.created_at as created_at, m.content as content
+    select m.m_id, name, display_name, avatar_icon, m.created_at as created_at, m.content as content
     from user
         inner join (
             select message.id as m_id, message.user_id, message.created_at, message.content
@@ -213,7 +213,7 @@ def get_message():
     rows = cur.fetchall()
     response = []
     for row in rows:
-        r = {'id': row['m_user_id'],
+        r = {'id': row['m_id'],
             'user': {'name': row['name'], 'display_name': row['display_name'], 'avatar_icon': row['avatar_icon']},
              'date': row['created_at'].strftime("%Y/%m/%d %H:%M:%S"),
              'content': row['content']}
