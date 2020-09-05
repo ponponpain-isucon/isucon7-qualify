@@ -213,13 +213,13 @@ def get_message():
     rows = cur.fetchall()
     response = []
     for row in rows:
-        r = {'id': row['m_id'],
+        r = {'m_id': row['m_id'],
             'user': {'name': row['name'], 'display_name': row['display_name'], 'avatar_icon': row['avatar_icon']},
              'date': row['created_at'].strftime("%Y/%m/%d %H:%M:%S"),
              'content': row['content']}
 
         response.append(r)
-    response.sort(key=lambda r: r['m_user_id'], reverse=True)
+    response.sort(key=lambda r: r['m_id'], reverse=True)
 
     max_message_id = max(r['m_id'] for r in rows) if rows else 0
     cur.execute('INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)'
