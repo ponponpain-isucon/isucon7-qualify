@@ -212,6 +212,7 @@ def get_message():
     rows = cur.fetchall()
     response = []
     for row in rows:
+        print(row.keys(), flush=True)
         r = {'m_id': row['m_id'],
             'user': {'name': row['name'], 'display_name': row['display_name'], 'avatar_icon': row['avatar_icon']},
              'date': row['created_at'].strftime("%Y/%m/%d %H:%M:%S"),
