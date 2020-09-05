@@ -198,29 +198,21 @@ def get_message():
     channel_id = int(flask.request.args.get('channel_id'))
     last_message_id = int(flask.request.args.get('last_message_id'))
     cur = dbh().cursor()
-    cur.execute(f"""
-    select m.m_id, name, display_name, avatar_icon
-    from user
-        inner join (
-            select message.id as m_id, message.user_id
-            from message
-            where message.id > {last_message_id} and channel_id = {channel_id}
-            order by message.id desc
-            limit 100
-        ) as m on m.user_id = user.id 
-    """)
-
+    cur.execute("SELECT * FROM message WHERE id > %s AND channel_id = %s ORDER BY id DESC LIMIT 100",
+                (last_message_id, channel_id))
     rows = cur.fetchall()
     response = []
     for row in rows:
-        r = {'user': {'name': row['name'], 'display_name': row['display_name'], 'avatar_icon': row['avatar_icon']},
-             'date': row['created_at'].strftime("%Y/%m/%d %H:%M:%S"),
-             'content': row['content']}
-
+        r = {}
+        r['id'] = row['id']
+        cur.execute("SELECT name, display_name, avatar_icon FROM user WHERE id = %s", (row['user_id'],))
+        r['user'] = cur.fetchone()
+        r['date'] = row['created_at'].strftime("%Y/%m/%d %H:%M:%S")
+        r['content'] = row['content']
         response.append(r)
     response.reverse()
 
-    max_message_id = max(r['m_id'] for r in rows) if rows else 0
+    max_message_id = max(r['id'] for r in rows) if rows else 0
     cur.execute('INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)'
                 ' VALUES (%s, %s, %s, NOW(), NOW())'
                 ' ON DUPLICATE KEY UPDATE message_id = %s, updated_at = NOW()',
@@ -239,14 +231,23 @@ def fetch_unread():
 
     cur = dbh().cursor()
     cur.execute('SELECT id FROM channel')
-    rows = cur.fetchall()
-    channel_ids = [row['id'] for row in rows]
+    channels = cur.fetchall()
+
+    channels_dict = {}
+    for channel in channels:
+        channels_dict[channel['id']] = channel
+    
+    cur.execute('SELECT * FROM haveread WHERE user_id = {}'.format(user_id))
+    havereads = cur.fetchall()
+
+    havereads_dict = {}
+    for haveread in havereads:
+        havereads_dict[haveread['channel_id']] = haveread
 
     res = []
-    for channel_id in channel_ids:
-        cur.execute('SELECT * FROM haveread WHERE user_id = %s AND channel_id = %s', (user_id, channel_id))
-        row = cur.fetchone()
-        if row:
+    for channel_id in channels_dict.keys():
+        row = havereads_dict.get(channel_id)
+        if row is not None:
             cur.execute('SELECT COUNT(*) as cnt FROM message WHERE channel_id = %s AND %s < id',
                         (channel_id, row['message_id']))
         else:
