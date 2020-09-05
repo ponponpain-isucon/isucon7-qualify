@@ -206,7 +206,6 @@ def get_message():
             from message
             where message.id > {last_message_id} and channel_id = {channel_id}
             order by message.id desc
-            limit 100
         ) as m on m.user_id = user.id 
     """)
 
@@ -219,7 +218,7 @@ def get_message():
              'content': row['content']}
 
         response.append(r)
-    response.sort(key=lambda r: r['m_id'], reverse=True)
+    response.sort(key=lambda r: r['m_id'], reverse=True)[:100]
 
     max_message_id = max(r['m_id'] for r in rows) if rows else 0
     cur.execute('INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)'
