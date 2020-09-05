@@ -189,7 +189,6 @@ def post_message():
     return ('', 204)
 
 
-@app.route('/message')
 def get_message():
     user_id = flask.session.get('user_id')
     if not user_id:
@@ -198,21 +197,29 @@ def get_message():
     channel_id = int(flask.request.args.get('channel_id'))
     last_message_id = int(flask.request.args.get('last_message_id'))
     cur = dbh().cursor()
-    cur.execute("SELECT * FROM message WHERE id > %s AND channel_id = %s ORDER BY id DESC LIMIT 100",
-                (last_message_id, channel_id))
+    cur.execute(f"""
+    select m.m_id, name, display_name, avatar_icon
+    from user
+        inner join (
+            select message.id as m_id, message.user_id
+            from message
+            where message.id > {last_message_id} and channel_id = {channel_id}
+            order by message.id desc
+            limit 100
+        ) as m on m.user_id = user.id 
+    """)
+
     rows = cur.fetchall()
     response = []
     for row in rows:
-        r = {}
-        r['id'] = row['id']
-        cur.execute("SELECT name, display_name, avatar_icon FROM user WHERE id = %s", (row['user_id'],))
-        r['user'] = cur.fetchone()
-        r['date'] = row['created_at'].strftime("%Y/%m/%d %H:%M:%S")
-        r['content'] = row['content']
+        r = {'user': {'name': row['name'], 'display_name': row['display_name'], 'avatar_icon': row['avatar_icon']},
+             'date': row['created_at'].strftime("%Y/%m/%d %H:%M:%S"),
+             'content': row['content']}
+
         response.append(r)
     response.reverse()
 
-    max_message_id = max(r['id'] for r in rows) if rows else 0
+    max_message_id = max(r['m_id'] for r in rows) if rows else 0
     cur.execute('INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)'
                 ' VALUES (%s, %s, %s, NOW(), NOW())'
                 ' ON DUPLICATE KEY UPDATE message_id = %s, updated_at = NOW()',
