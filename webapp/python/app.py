@@ -218,7 +218,7 @@ def get_message():
              'content': row['content']}
 
         response.append(r)
-    response.sort(lambda r: r['date'])
+    response.sort(key=lambda r: r['date'], reverse=False)
 
     max_message_id = max(r['m_id'] for r in rows) if rows else 0
     cur.execute('INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)'
