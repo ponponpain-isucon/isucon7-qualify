@@ -216,6 +216,7 @@ def get_message():
         r = {'user': {'name': row['name'], 'display_name': row['display_name'], 'avatar_icon': row['avatar_icon']},
              'date': row['created_at'].strftime("%Y/%m/%d %H:%M:%S"),
              'content': row['content']}
+
         response.append(r)
     response.reverse()
 
