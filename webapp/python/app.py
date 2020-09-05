@@ -209,7 +209,7 @@ def get_message():
         ) as m on m.user_id = user.id 
     """)
 
-    rows = cur.fetchall()
+    rows = sorted(cur.fetchall(), key=lambda r: r['m_id'], reverse=True)[:100]
     response = []
     for row in rows:
         r = {'m_id': row['m_id'],
@@ -218,7 +218,6 @@ def get_message():
              'content': row['content']}
 
         response.append(r)
-    response = sorted(response, key=lambda r: r['m_id'], reverse=True)[:100]
 
     max_message_id = max(r['m_id'] for r in rows) if rows else 0
     cur.execute('INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)'
