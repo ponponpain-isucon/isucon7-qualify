@@ -199,10 +199,10 @@ def get_message():
     last_message_id = int(flask.request.args.get('last_message_id'))
     cur = dbh().cursor()
     cur.execute(f"""
-    select m.m_id, name, display_name, avatar_icon
+    select m.m_id, name, display_name, avatar_icon, m.created_at as created_at, m.content as content
     from user
         inner join (
-            select message.id as m_id, message.user_id
+            select message.id as m_id, message.user_id, message.created_at, message.content
             from message
             where message.id > {last_message_id} and channel_id = {channel_id}
             order by message.id desc
